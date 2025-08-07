@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:news_app/screens/signupscreen.dart';
 
 class Loginscreen extends StatefulWidget {
   const Loginscreen({super.key});
@@ -38,7 +39,7 @@ class _LoginscreenState extends State<Loginscreen> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.only(top: 60),
+                padding: const EdgeInsets.only(top: 40),
                 child: Column(
                   children: [
                     Center(
@@ -107,7 +108,7 @@ class _LoginscreenState extends State<Loginscreen> {
                                   controller: usermailcontroller,
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
-                                      return "Please Enter your E-mail";
+                                      return "Please enter your E-mail";
                                     }
                                     return null;
                                   },
@@ -242,10 +243,10 @@ class _LoginscreenState extends State<Loginscreen> {
                             ),
                             GestureDetector(
                                 onTap: () {
-                                  //TODO
+                                  Navigator.push(context, MaterialPageRoute(builder: (context)=> Signupscreen()));
                                 },
                                 child: Text(
-                                    "Sign Up",
+                                    " Sign Up",
                                     style: TextStyle(
                                   color: Colors.blue,
                                   fontSize: 16.0,
