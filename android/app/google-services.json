@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "352411428731",
+    "project_id": "pulsedaily",
+    "storage_bucket": "pulsedaily.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:352411428731:android:fba767ff3e096bebc33fde",
+        "android_client_info": {
+          "package_name": "com.example.news_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC1dgfc-6cOsMj6cBbL2BqTY6baelYXhUI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
