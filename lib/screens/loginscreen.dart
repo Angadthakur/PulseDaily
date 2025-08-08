@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:news_app/providers/auth_provider.dart';
 import 'package:news_app/screens/signupscreen.dart';
+import 'package:provider/provider.dart';
 
 class Loginscreen extends StatefulWidget {
   const Loginscreen({super.key});
@@ -13,6 +15,39 @@ class _LoginscreenState extends State<Loginscreen> {
   TextEditingController userpasswordcontroller = TextEditingController();
 
   final _formkey = GlobalKey<FormState>();
+
+
+  @override
+  void dispose(){
+    usermailcontroller.dispose();
+    userpasswordcontroller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loginUser() async{
+    final authProvider = Provider.of<AuthProvider>(context,listen:false);
+
+    String email = usermailcontroller.text.trim();
+    String password = userpasswordcontroller.text;
+
+    bool success = await authProvider.signIn(email, password);
+
+    if(success){
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Login successful!"),
+          backgroundColor: Colors.green,
+          )
+          );
+    }else{
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(authProvider.errorMessage ?? "Login failed"),
+          backgroundColor: Colors.red,
+          )
+        );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -110,6 +145,7 @@ class _LoginscreenState extends State<Loginscreen> {
                                     if (value == null || value.isEmpty) {
                                       return "Please enter your E-mail";
                                     }
+                                    
                                     return null;
                                   },
                                   decoration: InputDecoration(
@@ -147,6 +183,9 @@ class _LoginscreenState extends State<Loginscreen> {
                                     validator: (value) {
                                       if(value== null || value.isEmpty){
                                         return "Please Enter your password";
+                                      }
+                                      if(value.length<6){
+                                        return "Password must be at least 6 characters.";
                                       }
                                       return null;
                                     },
@@ -188,7 +227,9 @@ class _LoginscreenState extends State<Loginscreen> {
                             ),
                             SizedBox(height: 70),
 
-                            GestureDetector(
+                            Consumer<AuthProvider>(builder: (context, authProvider, child){
+
+                            return GestureDetector(
                                 onTap: () {
                                   if(_formkey.currentState!.validate()){
                                     //
@@ -217,7 +258,9 @@ class _LoginscreenState extends State<Loginscreen> {
                                         ),
                                     ),
                                 ),
-                            )
+                            );
+                            },
+                            ),
                             
                             
                             
