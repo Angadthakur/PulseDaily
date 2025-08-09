@@ -231,9 +231,8 @@ class _LoginscreenState extends State<Loginscreen> {
 
                             return GestureDetector(
                                 onTap: () {
-                                  if(_formkey.currentState!.validate()){
-                                    //
-                                  }
+                                  
+                                  _loginUser();
                                 },
 
                                 child: Material(
