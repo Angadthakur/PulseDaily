@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:news_app/providers/auth_provider.dart';
+import 'package:news_app/screens/homescreen.dart';
 import 'package:news_app/screens/loginscreen.dart';
+import 'package:provider/provider.dart';
 
 class Signupscreen extends StatefulWidget {
   const Signupscreen({super.key});
@@ -15,6 +18,72 @@ class _SignupscreenState extends State<Signupscreen> {
   TextEditingController emailcontroller = TextEditingController();
   TextEditingController passwordcontroller = TextEditingController();
   TextEditingController confirmPasswordcontroller = TextEditingController();
+
+  @override
+  void dispose() {
+    namecontroller.dispose();
+    emailcontroller.dispose();
+    passwordcontroller.dispose();
+    confirmPasswordcontroller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _signUp() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (!_formkey.currentState!.validate()) {
+      return;
+    }
+
+    authProvider.clearError();
+
+    bool success = await authProvider.signUp(
+      emailcontroller.text.trim(),
+      passwordcontroller.text,
+      namecontroller.text.trim(),
+    );
+    if (mounted) {
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Account created successfully! Welcome ${namecontroller.text.trim()}!',
+            ),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            duration: Duration(seconds: 2),
+          ),
+        );
+        if (authProvider.isAuthenticated) {
+        print("Forcing navigation to home screen");
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => Homescreen()),
+          (route) => false,
+        );
+      } else {
+        print("User not authenticated after signup, staying on signup screen");
+      }
+      } else {
+        if (authProvider.errorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(authProvider.errorMessage!),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              margin: EdgeInsets.all(16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          );
+        }
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -84,193 +153,250 @@ class _SignupscreenState extends State<Signupscreen> {
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: Form(
-                            key: _formkey,
-                            child: Column(
-                              children: [
-                                Text(
-                                  "Name",
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                TextFormField(
-                                  controller: namecontroller,
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return "Please enter your name";
-                                    }
-                                    return null;
-                                  },
-                                  decoration: InputDecoration(
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: BorderSide(
-                                        color: Colors.grey,
-                                        width: 1.0,
+                          child: Consumer<AuthProvider>(
+                            builder: (context, authProvider, child) {
+                              return Form(
+                                key: _formkey,
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      "Name",
+                                      style: TextStyle(
+                                        color: Colors.black,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: BorderSide(
-                                        color: Colors.blue,
-                                        width: 2.0,
+                                    TextFormField(
+                                      controller: namecontroller,
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return "Please enter your name";
+                                        }
+                                        if (value.length < 2) {
+                                          return "Name must be at least 2 characters.";
+                                        }
+                                        return null;
+                                      },
+                                      decoration: InputDecoration(
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                          borderSide: BorderSide(
+                                            color: Colors.grey,
+                                            width: 1.0,
+                                          ),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                          borderSide: BorderSide(
+                                            color: Colors.blue,
+                                            width: 2.0,
+                                          ),
+                                        ),
+                                        hintText: "Enter name",
+                                        prefixIcon: Icon(
+                                          Icons.person_2_outlined,
+                                        ),
                                       ),
                                     ),
-                                    hintText: "Enter name",
-                                    prefixIcon: Icon(Icons.person_2_outlined),
-                                  ),
-                                ),
 
-                                SizedBox(height: 15),
+                                    SizedBox(height: 15),
 
-                                Text(
-                                  "Email",
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                TextFormField(
-                                  controller: emailcontroller,
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return "Please enter your Email ID";
-                                    }
-                                    return null;
-                                  },
-                                  decoration: InputDecoration(
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: BorderSide(
-                                        color: Colors.grey,
-                                        width: 1.0,
+                                    Text(
+                                      "Email",
+                                      style: TextStyle(
+                                        color: Colors.black,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: BorderSide(
-                                        color: Colors.blue,
-                                        width: 2.0,
+                                    TextFormField(
+                                      controller: emailcontroller,
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return "Please enter your Email ID";
+                                        }
+                                        if (!RegExp(
+                                          r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                                        ).hasMatch(value)) {
+                                          return 'Please enter a valid email address';
+                                        }
+                                        return null;
+                                      },
+                                      decoration: InputDecoration(
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                          borderSide: BorderSide(
+                                            color: Colors.grey,
+                                            width: 1.0,
+                                          ),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                          borderSide: BorderSide(
+                                            color: Colors.blue,
+                                            width: 2.0,
+                                          ),
+                                        ),
+                                        hintText: "Enter email ID",
+                                        prefixIcon: Icon(Icons.mail_outline),
                                       ),
                                     ),
-                                    hintText: "Enter email ID",
-                                    prefixIcon: Icon(Icons.mail_outline),
-                                  ),
-                                ),
 
-                                SizedBox(height: 15),
+                                    SizedBox(height: 15),
 
-                                Text(
-                                  "Password",
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                TextFormField(
-                                  controller: passwordcontroller,
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return "Please enter your password";
-                                    }
-                                    return null;
-                                  },
-                                  decoration: InputDecoration(
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: BorderSide(
-                                        color: Colors.grey,
-                                        width: 1.0,
+                                    Text(
+                                      "Password",
+                                      style: TextStyle(
+                                        color: Colors.black,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: BorderSide(
-                                        color: Colors.blue,
-                                        width: 2.0,
+                                    TextFormField(
+                                      controller: passwordcontroller,
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return "Please enter your password";
+                                        }
+                                        if (value.length < 6) {
+                                          return "Password must be at least 6 characters.";
+                                        }
+                                        return null;
+                                      },
+                                      decoration: InputDecoration(
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                          borderSide: BorderSide(
+                                            color: Colors.grey,
+                                            width: 1.0,
+                                          ),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                          borderSide: BorderSide(
+                                            color: Colors.blue,
+                                            width: 2.0,
+                                          ),
+                                        ),
+                                        hintText: "Enter password",
+                                        prefixIcon: Icon(
+                                          Icons.password_outlined,
+                                        ),
+                                      ),
+                                      obscureText: true,
+                                    ),
+
+                                    SizedBox(height: 15),
+
+                                    Text(
+                                      "Confirm Password",
+                                      style: TextStyle(
+                                        color: Colors.black,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                    hintText: "Enter password",
-                                    prefixIcon: Icon(Icons.password_outlined),
-                                  ),
-                                  obscureText: true,
-                                ),
-
-                                SizedBox(height: 15),
-
-                                Text(
-                                  "Confirm Password",
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                TextFormField(
-                                  controller: confirmPasswordcontroller,
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return "Please enter your password";
-                                    }
-                                    return null;
-                                  },
-                                  decoration: InputDecoration(
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: BorderSide(
-                                        color: Colors.grey,
-                                        width: 1.0,
+                                    TextFormField(
+                                      controller: confirmPasswordcontroller,
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return "Please confirm your password";
+                                        }
+                                        if (value != passwordcontroller.text) {
+                                          return "Passwords do not match.";
+                                        }
+                                        return null;
+                                      },
+                                      decoration: InputDecoration(
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                          borderSide: BorderSide(
+                                            color: Colors.grey,
+                                            width: 1.0,
+                                          ),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                          borderSide: BorderSide(
+                                            color: Colors.blue,
+                                            width: 2.0,
+                                          ),
+                                        ),
+                                        hintText: "Enter confirm password",
+                                        prefixIcon: Icon(
+                                          Icons.password_outlined,
+                                        ),
                                       ),
+                                      obscureText: true,
                                     ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: BorderSide(
-                                        color: Colors.blue,
-                                        width: 2.0,
-                                      ),
-                                    ),
-                                    hintText: "Enter confirm password",
-                                    prefixIcon: Icon(Icons.password_outlined),
-                                  ),
-                                  obscureText: true,
-                                ),
 
-                                SizedBox(height: 20),
+                                    SizedBox(height: 20),
 
-                                GestureDetector(
-                                  onTap: () {
-                                    //TODO
-                                  },
-                                  child: Material(
-                                    elevation: 5.0,
-                                    borderRadius: BorderRadius.circular(10),
-                                    child: Container(
-                                      width: 130,
-                                      padding: EdgeInsets.all(15),
-                                      decoration: BoxDecoration(
-                                        color: Color(0XFF64b3f4),
+                                    GestureDetector(
+                                      onTap: authProvider.isloading
+                                          ? null
+                                          : _signUp,
+                                      child: Material(
+                                        elevation: 5.0,
                                         borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          "Sign Up",
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 18.0,
-                                            fontWeight: FontWeight.bold,
+                                        child: Container(
+                                          width: 130,
+                                          padding: EdgeInsets.all(15),
+                                          decoration: BoxDecoration(
+                                            color: authProvider.isloading
+                                                ? Colors.grey
+                                                : Color(0XFF64b3f4),
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                          ),
+                                          child: Center(
+                                            child: authProvider.isloading
+                                                ? SizedBox(
+                                                    height: 20,
+                                                    width: 20,
+                                                    child: CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                      valueColor:
+                                                          AlwaysStoppedAnimation<
+                                                            Color
+                                                          >(Colors.white),
+                                                    ),
+                                                  )
+                                                : Text(
+                                                    "Sign Up",
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 18.0,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
                                           ),
                                         ),
                                       ),
                                     ),
-                                  ),
+                                  ],
                                 ),
-                              ],
-                            ),
+                              );
+                            },
                           ),
                         ),
                       ),
