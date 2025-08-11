@@ -90,7 +90,7 @@ class _LoginscreenState extends State<Loginscreen> {
                     SizedBox(height: 15),
                     Center(
                       child: Text(
-                        "Login to your account!!",
+                        "Welcome back!!",
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
