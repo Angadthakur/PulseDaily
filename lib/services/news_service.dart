@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:news_app/models/article_model.dart';
 
 class NewsService {
-  final String _apiKey = "80b5ee0e48fa4bc98e1801e733e32beb";
+  final String _apiKey = "1d71c00de9914f2d9cd721200a368482";
   final String _baseUrl = "https://newsapi.org/v2";
 
   final List<String> _globalCountryCodes = ["in","us","gb","au","ca"];
