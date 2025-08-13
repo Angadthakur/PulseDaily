@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:news_app/providers/auth_provider.dart';
+import 'package:news_app/providers/bookmark_provider.dart';
 import 'package:news_app/providers/news_provider.dart';
 import 'package:news_app/screens/homescreen.dart';
 import 'package:news_app/screens/loginscreen.dart';
@@ -21,7 +22,8 @@ class MainApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => AuthProvider()),
-        ChangeNotifierProvider(create: (context) => NewsProvider())
+        ChangeNotifierProvider(create: (context) => NewsProvider()),
+        ChangeNotifierProvider(create: (context)=> BookmarkProvider())
         ],
       child: MaterialApp(
         title: "PulseDaily",
