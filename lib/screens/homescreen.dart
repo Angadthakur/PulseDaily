@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:news_app/models/article_model.dart';
 import 'package:news_app/providers/auth_provider.dart';
+import 'package:news_app/providers/bookmark_provider.dart';
 import 'package:news_app/providers/news_provider.dart';
+import 'package:news_app/screens/bookmarkscreen.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -78,14 +80,48 @@ class _HomescreenState extends State<Homescreen>
           ),
         ),
         actions: [
-          IconButton(
-            onPressed: (){
-              Provider.of<AuthProvider>(context,listen: false).signOut();
-            }, 
-            icon: const Icon(
-              Icons.logout,
-              color: Colors.black,
-            ))
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert,color: Colors.black),
+            onSelected: (value) {
+              if(value == "bookmarks"){
+                Navigator.push(context, MaterialPageRoute(builder: (context)=> const Bookmarkscreen()));
+              }else if(value == "about"){
+                showAboutDialog(
+                  context: context,
+                  applicationName: "PulseDaily",
+                  applicationVersion: "1.0.0",
+                  children: [const Text("Your daily dose of global news")]
+                  );
+              }else if(value == "signout"){
+                Provider.of<AuthProvider>(context, listen: false).signOut();
+              }
+            },
+            itemBuilder: (BuildContext context)=> <PopupMenuEntry<String>>[
+              const PopupMenuItem<String>(
+                value: "bookmarks",
+                child: ListTile(
+                  leading: Icon(Icons.bookmark),
+                  title: Text("Bookmarks"),
+                ),
+                ),
+                const PopupMenuItem<String>(
+                value: 'about',
+                child: ListTile(
+                  leading: Icon(Icons.info_outline),
+                  title: Text('About'),
+                ),
+              ),
+                const PopupMenuDivider(),
+
+                const PopupMenuItem<String>(
+                  value: "signout",
+                  child: ListTile(
+                    leading: Icon(Icons.logout, color: Colors.red,),
+                    title: Text("Sign Out",style: TextStyle(color: Colors.red),)
+                  ),
+                  ),
+            ]
+            )
         ],
         bottom: TabBar(
           controller: _tabController,
@@ -170,30 +206,33 @@ class _NewsArticleCard extends StatelessWidget {
   Future<void> _launchURL(String urlString) async {
     final Uri url = Uri.parse(urlString);
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
-      // You can show a SnackBar here if launching fails
+      
       print('Could not launch $urlString');
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final bookmarkProvider = Provider.of<BookmarkProvider>(context);
+    final isBookmarked = bookmarkProvider.isBookmarked(article);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
       child: Card(
         elevation: 4,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        clipBehavior: Clip.antiAlias, // Ensures the image respects the border
+        clipBehavior: Clip.antiAlias, //ensures the image respects the border
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Article Image
+            //article Image
             if (article.urlToImage != null)
               Image.network(
                 article.urlToImage!,
                 height: 200,
                 width: double.infinity,
                 fit: BoxFit.cover,
-                // Show a placeholder while loading
+                
                 loadingBuilder: (context, child, loadingProgress) {
                   if (loadingProgress == null) return child;
                   return Container(
@@ -202,7 +241,7 @@ class _NewsArticleCard extends StatelessWidget {
                     child: const Center(child: CircularProgressIndicator()),
                   );
                 },
-                // Show an icon if the image fails to load
+                
                 errorBuilder: (context, error, stackTrace) {
                   return Container(
                     height: 200,
@@ -213,13 +252,13 @@ class _NewsArticleCard extends StatelessWidget {
                 },
               ),
             
-            // Article Content
+            //article Content
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.fromLTRB(16,16,16,8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Title
+                  
                   Text(
                     article.title,
                     style: const TextStyle(
@@ -228,7 +267,7 @@ class _NewsArticleCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  // Description
+                  
                   if (article.description != null)
                     Text(
                       article.description!,
@@ -236,22 +275,32 @@ class _NewsArticleCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(fontSize: 16, color: Colors.grey[700]),
                     ),
-                  const SizedBox(height: 12),
-                  // Read More Button
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () => _launchURL(article.url),
-                      child: const Text(
-                        'Read More...',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0XFF64b3f4),
-                        ),
-                      ),
-                    ),
-                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        onPressed: (){
+                          bookmarkProvider.toggleBookmark(article);
+                        }, 
+                        icon: Icon(
+                          isBookmarked? Icons.bookmark :Icons.bookmark_border,
+                          color: isBookmarked ? Color(0XFF64b3f4) : Colors.grey,
+                          size: 30,
+                        )),
+                        TextButton(
+                          onPressed: ()=> _launchURL(article.url), 
+                          child: const Text(
+                            "Read More...",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0XFF64b3f4)
+                            ),
+                          ))
+                    ],
+                  )
+                  
                 ],
               ),
             ),
