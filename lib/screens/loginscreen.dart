@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:news_app/providers/auth_provider.dart';
+import 'package:news_app/screens/forgotpassscreen.dart';
 import 'package:news_app/screens/signupscreen.dart';
 import 'package:provider/provider.dart';
 
@@ -16,50 +17,53 @@ class _LoginscreenState extends State<Loginscreen> {
 
   final _formkey = GlobalKey<FormState>();
 
-
   @override
-  void dispose(){
+  void dispose() {
     usermailcontroller.dispose();
     userpasswordcontroller.dispose();
     super.dispose();
   }
 
-  Future<void> _loginUser() async{
-    final authProvider = Provider.of<AuthProvider>(context,listen:false);
+  Future<void> _loginUser() async {
+    if (!_formkey.currentState!.validate()) {
+      return;
+    }
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     String email = usermailcontroller.text.trim();
     String password = userpasswordcontroller.text;
 
     bool success = await authProvider.signIn(email, password);
 
-    if(success){
+    if (!mounted) return;
+
+    if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Login successful!"),
           backgroundColor: Colors.green,
-          )
-          );
-    }else{
+        ),
+      );
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(authProvider.errorMessage ?? "Login failed"),
           backgroundColor: Colors.red,
-          )
-        );
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        
       backgroundColor: Colors.white,
       body: SingleChildScrollView(
         child: Container(
           child: Stack(
             children: [
               Container(
-                height: MediaQuery.of(context).size.height/3.2,
+                height: MediaQuery.of(context).size.height / 3.2,
                 width: MediaQuery.of(context).size.width,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -99,17 +103,17 @@ class _LoginscreenState extends State<Loginscreen> {
                       ),
                     ),
                     SizedBox(height: 10.0),
-        
+
                     Container(
                       margin: EdgeInsets.symmetric(
                         vertical: 25.0,
                         horizontal: 20.0,
                       ),
-        
+
                       child: Material(
                         elevation: 5.0,
                         borderRadius: BorderRadius.circular(10),
-        
+
                         child: Container(
                           padding: EdgeInsets.symmetric(
                             vertical: 30.0,
@@ -122,14 +126,13 @@ class _LoginscreenState extends State<Loginscreen> {
                             borderRadius: BorderRadius.circular(10),
                           ),
 
-        
                           child: Form(
                             key: _formkey,
                             child: Column(
                               children: [
                                 Padding(
-                                    padding:const EdgeInsets.only(top: 20) 
-                                    ),
+                                  padding: const EdgeInsets.only(top: 20),
+                                ),
 
                                 Text(
                                   "Email",
@@ -145,7 +148,7 @@ class _LoginscreenState extends State<Loginscreen> {
                                     if (value == null || value.isEmpty) {
                                       return "Please enter your E-mail";
                                     }
-                                    
+
                                     return null;
                                   },
                                   decoration: InputDecoration(
@@ -167,30 +170,30 @@ class _LoginscreenState extends State<Loginscreen> {
                                     prefixIcon: Icon(Icons.mail_outline),
                                   ),
                                 ),
-        
+
                                 SizedBox(height: 35),
 
                                 Text(
-                                    "Password",
-                                    style: TextStyle(
-                                        color: Colors.black,
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold
-                                    ),
+                                  "Password",
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                                 TextFormField(
-                                    controller: userpasswordcontroller,
-                                    validator: (value) {
-                                      if(value== null || value.isEmpty){
-                                        return "Please Enter your password";
-                                      }
-                                      if(value.length<6){
-                                        return "Password must be at least 6 characters.";
-                                      }
-                                      return null;
-                                    },
-                                    decoration: InputDecoration(
-                                        border: OutlineInputBorder(
+                                  controller: userpasswordcontroller,
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return "Please Enter your password";
+                                    }
+                                    if (value.length < 6) {
+                                      return "Password must be at least 6 characters.";
+                                    }
+                                    return null;
+                                  },
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(10),
                                       borderSide: BorderSide(
                                         color: Colors.grey,
@@ -206,66 +209,68 @@ class _LoginscreenState extends State<Loginscreen> {
                                     ),
                                     hintText: "Enter password",
                                     prefixIcon: Icon(Icons.password_outlined),
-                                 ),
-                                 obscureText: true,
-                            ),
-                            Container(
-                                alignment: Alignment.bottomRight,
-                                child: GestureDetector(
+                                  ),
+                                  obscureText: true,
+                                ),
+                                Container(
+                                  alignment: Alignment.bottomRight,
+                                  child: GestureDetector(
                                     onTap: () {
-                                      //TODO
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const ForgotPasswordScreen(),
+                                        ),
+                                      );
                                     },
                                     child: Text(
-                                        "Forgot Password",
-                                        style: TextStyle(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w500,
-                                            color: Colors.black54
-                                        ),
+                                      "Forgot Password",
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.purpleAccent,
+                                      ),
                                     ),
+                                  ),
                                 ),
-                            ),
-                            SizedBox(height: 70),
+                                SizedBox(height: 70),
 
-                            Consumer<AuthProvider>(builder: (context, authProvider, child){
+                                Consumer<AuthProvider>(
+                                  builder: (context, authProvider, child) {
+                                    return GestureDetector(
+                                      onTap: () {
+                                        _loginUser();
+                                      },
 
-                            return GestureDetector(
-                                onTap: () {
-                                  
-                                  _loginUser();
-                                },
-
-                                child: Material(
-                                    elevation: 5.0,
-                                    borderRadius: BorderRadius.circular(10),
-                                    child: Container(
-                                        width: 130,
-                                        padding: EdgeInsets.all(15),
-                                        decoration: BoxDecoration(
-                                            color:Color(0XFF64b3f4),
-                                            borderRadius: BorderRadius.circular(10)
-                                        ),
-                                        child: Center(
+                                      child: Material(
+                                        elevation: 5.0,
+                                        borderRadius: BorderRadius.circular(10),
+                                        child: Container(
+                                          width: 130,
+                                          padding: EdgeInsets.all(15),
+                                          decoration: BoxDecoration(
+                                            color: Color(0XFF64b3f4),
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                          ),
+                                          child: Center(
                                             child: Text(
-                                                "Login",
-                                                style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 18.0,
-                                                    fontWeight: FontWeight.bold
-                                                ),
-                                                ),
+                                              "Login",
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 18.0,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
                                         ),
-                                    ),
+                                      ),
+                                    );
+                                  },
                                 ),
-                            );
-                            },
-                            ),
-                            
-                            
-                            
-                            
-                            
-                            ],
+                              ],
                             ),
                           ),
                         ),
@@ -274,29 +279,32 @@ class _LoginscreenState extends State<Loginscreen> {
                     SizedBox(height: 20),
 
                     Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                            Text(
-                                "Don't have an account?",
-                                style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 16
-                                ),
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "Don't have an account?",
+                          style: TextStyle(color: Colors.black, fontSize: 16),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => Signupscreen(),
+                              ),
+                            );
+                          },
+                          child: Text(
+                            " Sign Up",
+                            style: TextStyle(
+                              color: Colors.blue,
+                              fontSize: 16.0,
+                              fontWeight: FontWeight.w600,
                             ),
-                            GestureDetector(
-                                onTap: () {
-                                  Navigator.push(context, MaterialPageRoute(builder: (context)=> Signupscreen()));
-                                },
-                                child: Text(
-                                    " Sign Up",
-                                    style: TextStyle(
-                                  color: Colors.blue,
-                                  fontSize: 16.0,
-                                  fontWeight: FontWeight.w600),
-                                ),
-                            )
-                        ],
-                    )
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
