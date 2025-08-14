@@ -84,7 +84,7 @@ The app is designed to provide a **clean, intuitive, and feature-rich reading ex
 <img src="assets/screenshots/SignupScreen.png" alt="SignUp Screen" width="300"/>
 
 ### 🏠 Home Screen  
-<img src="assets/screenshots/homescreen.png" alt="Home Screen" width="300"/>
+<img src="assets/screenshots/Homescreen.png" alt="Home Screen" width="300"/>
 
 ### 📂 Bookmark Screen 
 <img src="assets/screenshots/Bookmarkscreen.png" alt="Bookmark Screen" width="300"/>
