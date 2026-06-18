@@ -42,4 +42,14 @@ const getUserBookmarks =  async (req,res) => {
     }
 };
 
-module.exports = { addBookmark , getUserBookmarks};
+const removeBookmark =  async (req,res) => {
+    try{
+        const{url}=req.body;
+        await Bookmark.findOneAndDelete({userId:req.user._id, url:url});
+        res.status(200).json({message: 'Bookmark removed'});
+    }catch(error){
+        res.status(500).json({message: 'Server Error', error: error.message});
+    }
+};
+
+module.exports = { addBookmark , getUserBookmarks, removeBookmark};
