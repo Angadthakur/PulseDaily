@@ -1,68 +1,98 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http/http.dart' as http;
 import 'package:news_app/models/article_model.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:news_app/utils/api_constants.dart';
+
 
 class BookmarkProvider extends ChangeNotifier {
   List<Article> _bookmarks = [];
-  late SharedPreferences _prefs;
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  bool _isLoading = false;
+
 
   List<Article> get bookmarks => _bookmarks;
+  bool get isLoading => _isLoading;
 
   BookmarkProvider(){
-    _initPref();
+    fetchBookmarks();
   }
 
 
-//initialize SharedPreferences and load bookmarks
-  Future<void> _initPref() async {
-    _prefs = await SharedPreferences.getInstance();
-    _loadBookmarks();
-  }
-  
-  //load bookmarks from local storage
-  void _loadBookmarks (){
-    final List<String>? bookmarksJson = _prefs.getStringList("bookmakrs");
-    if(bookmarksJson != null){
-      _bookmarks = bookmarksJson
-      .map((jsonString)=> Article.fromJson(jsonDecode(jsonString)))
-      .toList();
+//bookmarks from backend
+  Future<void> fetchBookmarks() async {
+    try{
+      _isLoading =  true;
+      notifyListeners();
 
+      final token = await _storage.read(key: 'jwt_token');
+      if (token == null) return;
+
+      final response = await http.get(
+        Uri.parse(ApiConstants.bookmarksEndpoint),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200){
+        final List<dynamic> jsonList =  jsonDecode(response.body);
+        _bookmarks =  jsonList.map((json) => Article.fromJson(json)).toList();
+      }
+    } catch(e){
+      print("Error fetching bookmarks: $e");
+    } finally {
+      _isLoading =  false;
       notifyListeners();
     }
   }
-
-  //save bookmarks to local storage
-  Future<void> _saveBookmarks() async{
-    final List<String> bookmarksJson = _bookmarks
-    .map((article)=> jsonEncode({
-      "title":article.title,
-      'description': article.description,
-              'urlToImage': article.urlToImage,
-              'url': article.url,
-              'author': article.author,
-              'publishedAt': article.publishedAt,
-              'content': article.content,
-    }))
-    .toList();
-    await _prefs.setStringList("bookmakrs", bookmarksJson);
-  }
   
-  //check if an article is bookmarked already
-  bool isBookmarked (Article article){
-    return _bookmarks.any((b)=> b.url == article.url);
+  //if bookmarked
+  bool isBookmarked(Article article) {
+    return _bookmarks.any((b) => b.url == article.url);
   }
 
-  //add or remove a bookmark
-  void toggleBookmark(Article article) {
-    if (isBookmarked(article)) {
+  //add or remove bookmark
+  Future<void> toggleBookmark(Article article) async {
+    final token = await _storage.read(key: 'jwt_token');
+    if(token == null) return;
+
+    final currentlyBookmarked = isBookmarked(article);
+
+    if(currentlyBookmarked){
       _bookmarks.removeWhere((b) => b.url == article.url);
-    } else {
+    }else {
       _bookmarks.add(article);
     }
-    _saveBookmarks();
     notifyListeners();
 
-}
+    try{
+      if(currentlyBookmarked){
+        await http.delete(
+          Uri.parse('${ApiConstants.bookmarksEndpoint}'),
+          headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
+          body: jsonEncode({'url' : article.url})
+        );
+      }else{
+        await http.post(
+          Uri.parse(ApiConstants.bookmarksEndpoint),
+          headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
+          body: jsonEncode({
+            "title": article.title,
+            "description": article.description ?? "",
+            "url": article.url,
+            "urlToImage": article.urlToImage ?? "",
+            "sourceName": article.author ?? "", // Mapping author for now
+            "publishedAt": article.publishedAt,
+          }),
+        );
+      }
+    }catch(e){
+      print("Error toggling bookmark: $e");
+      fetchBookmarks();
+    }
+  }
+
 }
