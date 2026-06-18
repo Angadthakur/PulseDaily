@@ -1,194 +1,131 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:news_app/utils/api_constants.dart';
 
 class AuthProvider extends ChangeNotifier {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  User? _user;
-  bool _isloading = false;
-  String? _errormessage;
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  
+  bool _isLoading = false;
+  String? _errorMessage;
+  String? _token;
+  String? _userId;
 
-  //getters
-  User? get user => _user;
-  bool get isloading => _isloading;
-  String? get errorMessage => _errormessage;
-  bool get isAuthenticated => _user != null;
+  bool get isloading => _isLoading;
+  String? get errorMessage => _errorMessage;
+  bool get isAuthenticated => _token != null;
+  String? get token => _token;
 
   AuthProvider() {
-    print("AuthProvider constructor called");
-
-    _user = _auth.currentUser;
-    print("Initial user: ${_user?.uid}");
-
-    _auth.authStateChanges().listen((User? user) {
-       print("=== Auth State Change ===");
-       print("Previous user: ${_user?.uid}");
-       print("New user: ${user?.uid}");
-       print("========================");
-      _user = user;
-      notifyListeners();
-    });
-  }
-  //Signup with email and pass
-  Future<bool> signUp(String email, String password, String name) async {
-    try {
-      print("Starting signup for: $email");
-      _setLoading(true);
-      _clearError();
-
-      UserCredential result = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      print("User created: ${result.user?.uid}");
-
-      await Future.delayed(Duration(milliseconds: 500));
-      try{
-      await result.user?.updateDisplayName(name);
-      print("Display name updated");
-      }catch(displayNameError){
-        print("Display name update error (non-critical): $displayNameError");
-      }
-
-      await result.user?.reload();
-
-      _user = _auth.currentUser;
-      print("Current user after reload: ${_user?.uid}");
-
-      _setLoading(false);
-      print("Signup successful");
-      return true;
-
-    } on FirebaseAuthException catch (e) {
-      print("Firebase Auth error: ${e.code} - ${e.message}");
-      _setLoading(false);
-      _setError(_getErrorMessage(e.code));
-      return false;
-    } catch (e) {
-      print("Signup error: $e");
-      _setLoading(false);
-      
-      User? currentUser = _auth.currentUser;
-      if(currentUser != null){
-        print("User was created despite error : ${currentUser.uid}");
-        _user = currentUser;
-        
-        try{
-          if(currentUser.displayName == null || currentUser.displayName !. isEmpty){
-            await currentUser.updateDisplayName(name);
-            await currentUser.reload();
-            _user = _auth.currentUser;
-          }
-        }catch(nameError){
-          print("Display name update error: $nameError");
-        }
-        notifyListeners();
-        return true;
-      }
-      _setError("An unexpected error occured");
-       return false;
-    }
+    _loadStoredToken();
   }
 
-  //Signin with email and pass
+  //loading token from secure storage on startup
+  Future<void> _loadStoredToken() async {
+    _token = await _storage.read(key: 'jwt_token');
+    _userId = await _storage.read(key: 'user_id');
+    notifyListeners();
+  }
+
+  //helper to set login state securely
+  void _setLoginState(String token, String userId) async {
+    _token = token;
+    _userId = userId;
+    await _storage.write(key: 'jwt_token', value: token);
+    await _storage.write(key: 'user_id', value: userId);
+    notifyListeners();
+  }
+
+  //login
   Future<bool> signIn(String email, String password) async {
     try {
       _setLoading(true);
       _clearError();
 
-      UserCredential result = await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
+      final response = await http.post(
+        Uri.parse(ApiConstants.authLoginEndpoint),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'password': password}),
       );
 
-      _user = result.user;
-      _setLoading(false);
-      return true;
-    } on FirebaseAuthException catch (e) {
-      _setLoading(false);
-      _setError(_getErrorMessage(e.code));
-      return false;
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        _setLoginState(data['token'], data['userId']);
+        _setLoading(false);
+        return true;
+      } else {
+        final data = jsonDecode(response.body);
+        _setError(data['message'] ?? 'Login failed');
+        _setLoading(false);
+        return false;
+      }
     } catch (e) {
       _setLoading(false);
-      _setError("An unexpected error occured");
+      _setError("Could not connect to the server.");
       return false;
     }
   }
 
-  //signout
-  Future<void> signOut() async {
-    await _auth.signOut();
-    _user = null;
-    notifyListeners();
-  }
-
-  //resetpassword
-  Future<bool> resetPassword(String email) async {
+  //signup/register
+  Future<bool> signUp(String email, String password, String name) async {
     try {
       _setLoading(true);
       _clearError();
 
-      await _auth.sendPasswordResetEmail(email: email);
+      final response = await http.post(
+        Uri.parse(ApiConstants.authRegisterEndpoint),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'password': password}),
+      );
 
-      _setLoading(false);
-      return true;
-    } on FirebaseAuthException catch (e) {
-      _setLoading(false);
-      _setError(_getErrorMessage(e.code));
-      return false;
+      if (response.statusCode == 201) {
+        
+        return await signIn(email, password);
+      } else {
+        final data = jsonDecode(response.body);
+        _setError(data['message'] ?? 'Registration failed');
+        _setLoading(false);
+        return false;
+      }
     } catch (e) {
       _setLoading(false);
-      _setError("An unexpected error occurred");
+      _setError("Could not connect to the server.");
       return false;
     }
   }
 
+  //sign Out
+  Future<void> signOut() async {
+    _token = null;
+    _userId = null;
+    await _storage.delete(key: 'jwt_token');
+    await _storage.delete(key: 'user_id');
+    notifyListeners();
+  }
+
+  
+  Future<bool> resetPassword(String email) async {
+    _setError("Password reset is not yet implemented on the custom backend.");
+    return false;
+  }
+
   void _setLoading(bool loading) {
-    _isloading = loading;
+    _isLoading = loading;
     notifyListeners();
   }
 
   void _setError(String error) {
-    _errormessage = error;
+    _errorMessage = error;
     notifyListeners();
   }
 
   void _clearError() {
-    _errormessage = null;
+    _errorMessage = null;
     notifyListeners();
   }
 
   void clearError() {
     _clearError();
   }
-
-//firebase error codes to user-friendly messages
-  String _getErrorMessage(String errorCode) {
-    switch (errorCode) {
-      case "user-not-found":
-        return "No user found with this email address.";
-
-      case "wrong-password":
-        return "Wrong password provided.";
-
-      case 'email-already-in-use':
-        return "An account already exists with this email.";
-
-      case "weak-password":
-        return "Password should be at least 6 characters.";
-
-      case "invalid-email":
-        return "Please enter a valid email address.";
-
-      case "user-disabled":
-        return "This user account has been disabled.";
-
-      case "too-many-requests":
-        return "Too many attempts. Please try again later.";
-
-      default:
-        return "Authentication failed. Please try again.";
-    }
-  }
 }
-
-
