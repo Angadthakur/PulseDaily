@@ -52,4 +52,18 @@ const login = async (req,res) => {
     }
 };
 
-module.exports = { register , login};
+const resetPassword = async (req,res) => {
+    try{
+        const{email}= req.body;
+        const user = await User.findOne({email});
+
+        if(!user){
+            return res.status(200).json({message :'If that email is registered, a reset link has been sent.'});
+        }
+        res.status(200).json({message: 'If that email is registered, a reset link has been sent.'});
+    }catch (error){
+        res.status(500).json({message: 'Server error', error : error.message});
+    }
+};
+
+module.exports = { register, login, resetPassword};
