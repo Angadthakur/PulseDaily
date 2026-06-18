@@ -24,6 +24,11 @@ class Bookmarkscreen extends StatelessWidget {
       ),
       body: Consumer<BookmarkProvider>(
         builder: (context, bookmarkProvider, child) {
+          if(bookmarkProvider.isLoading){
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
           final bookmarks =  bookmarkProvider.bookmarks;
 
           if(bookmarks.isEmpty){
