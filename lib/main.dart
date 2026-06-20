@@ -1,4 +1,3 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:news_app/providers/auth_provider.dart';
 import 'package:news_app/providers/bookmark_provider.dart';
@@ -10,7 +9,6 @@ import 'package:provider/provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
   runApp(MainApp());
 }
 
@@ -36,16 +34,11 @@ class MainApp extends StatelessWidget {
 }
 
 class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({super.key});
   @override
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
-        print("=== AuthWrapper Debug ===");
-        print("isloading: ${authProvider.isloading}");
-        print("isAuthenticated: ${authProvider.isAuthenticated}");
-        print("user: ${authProvider.user}");
-        print("user uid: ${authProvider.user?.uid}");
-        print("========================");
 
         if (authProvider.isloading) {
           return Scaffold(body: Center(child: CircularProgressIndicator()));
